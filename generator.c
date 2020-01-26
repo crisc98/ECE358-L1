@@ -8,7 +8,7 @@ int main()
     double rv, u, lambda, mean;
     mean = 0;
     lambda = 75;
-    n = 10000000;
+    n = 1000;
    
     /* Intializes random number generator */
     srand((unsigned) time(0));
@@ -21,7 +21,6 @@ int main()
         //printf("%.8f\t%.8f\t%.8f\t\n", u, log(1-u), rv);
     }
     mean = mean/n;
-    printf("%.8f\n", mean);
     printf("%.8f\n", mean);
    
     return(0);
