@@ -12,69 +12,98 @@ class Simulator
     
     vector<int> queueSizes;
     vector<Packet> queue;
+    enum Event {NONE, ARRIVAL, OBSERVER};
+    vector<Event> eventQueue;
     long packetsPerSecond;
-    long serviceTime;
+    long avgPacketLength;
+    long transmissionRate;
     long totalTicks = 0;
-    long nextTick = 0;
+    long nextTickArrival = 0;
+    long nextTickObserver = 0;
+    long nextTickDeparture = 0;
     long idleTime = 0;
+    long numArrivals = 0;
+    long numDepartures = 0;
+    long numObservations = 0;
 
     public:
     Simulator(long pps, double L, double rate) 
     {
         packetsPerSecond = pps;
-        serviceTime = (long)((L/rate) * 1000000.0);
+        avgPacketLength = L;
+        transmissionRate = rate;
     }
+
+    void generateEvents() {
+        //Insert arrival event, wait randVar*totalTicks ticks and insert again
+        for(int i = 0; i < totalTicks; i++){
+            eventQueue.push_back(NONE);
+        }
+        for(int i = 0; i < totalTicks; i++){
+            if(i == nextTickArrival) {
+                eventQueue[i] = ARRIVAL;
+                ExponentialDistribution e;
+                double randomVariable = e.generateRandVar(packetsPerSecond);
+                nextTickArrival = (long) i + (long) (randomVariable * totalTicks);              
+            }
+            if(i == nextTickObserver) {
+                eventQueue[i+1] = OBSERVER;
+                ExponentialDistribution e;
+                double randomVariable = e.generateRandVar(5*packetsPerSecond);
+                nextTickObserver = (long) i + (long) (randomVariable * totalTicks);
+            }
+        }
+        cout << "Events Generated" << endl;
+    }
+
+    double generatePacketLength(){
+        ExponentialDistribution e;
+        double retVal = e.generateRandVar(avgPacketLength);
+        return 1/retVal;
+    }
+    
     void startSimulation(long ticks) {
         totalTicks = ticks;
-
+        Packet* currentPacket;
+        generateEvents();
         for (long tick = 0; tick < ticks; tick++) {
-            if (arrival(tick)) {
-                //cout << "Arrival" << endl;
-                queueSizes.push_back(queue.size());
+            switch(eventQueue[tick]) {
+                case ARRIVAL:
+                    queue.push_back(Packet(tick, generatePacketLength()));
+                    numArrivals++;
+                    break;
+                case OBSERVER:
+                    numObservations++;
+                    queueSizes.push_back(queue.size());
+                    if (queue.empty()) {
+                        idleTime += 1;
+                    }
+                    //observe();
+                    break;
             }
-
-            if (departure(tick)) {
-                cout << "Departure" << endl;
-                queueSizes.push_back(queue.size());
+            if(!currentPacket || !currentPacket->isServicing()){
+                if(!queue.empty()){
+                    currentPacket = &queue.front();
+                    nextTickDeparture = tick + (currentPacket->getLength()/(transmissionRate*(1000000/totalTicks)));
+                    currentPacket->service(nextTickDeparture);
+                }
+            }
+            else if (currentPacket->getDepartureTick() == tick){
+                queue.erase(queue.begin());
+                numDepartures++;
+                currentPacket = nullptr;
             }
         }
+        computePerformance();
     } 
-    bool arrival(long tick) {
-        if (tick >= nextTick) {
-            queue.push_back(Packet(tick));
-            ExponentialDistribution e;
-            double randomVariable = e.generateRandVar(packetsPerSecond);
-            nextTick = tick + (long)(randomVariable * 100);
 
-            return true;
-        }
 
-        return false;
+    void observe() {
+        cout << "Number of Arrivals: " << numArrivals << endl;
+        cout << "Number of Departures: " << numDepartures << endl;
+        cout << "Number of Observations: " << numObservations << endl;
     }
 
-    bool departure(long tick) {
-        if (queue.empty()) {
-            idleTime += 1;
-            return false;
-        }
-
-        Packet packet = queue.front();
-
-        if (!packet.isServicing()) {
-            //cout << "Servicing Packet" << endl;
-            packet.service(tick);
-        }
-
-        for(int i=0; i< queue.size(); i++){
-            if (tick == queue[i].getDepartureTick() + serviceTime) {
-                cout << "Erased";
-                queue.erase(queue.begin()+i);
-                return true;
-            }
-        }
-
-        return false;
-    }
     void computePerformance() {
         cout << "E[N]:\t" << averageQueueSize() << "\n";
         cout << "P_IDLE:\t" << percentIdle() << "%\n";

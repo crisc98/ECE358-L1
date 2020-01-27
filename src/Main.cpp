@@ -49,6 +49,5 @@ int main() {
 
         Simulator simulator = Simulator(lambda, L, C);
         simulator.startSimulation(n);
-        simulator.computePerformance();
     }
 }
