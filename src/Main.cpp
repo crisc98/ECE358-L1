@@ -1,53 +1,60 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <iostream>
-#include "Simulator.h"
+#include <cstdlib>
 
-using namespace std;
-int main() {
-    cout << "Would you like to specify a value for K? [y/n] ";
-    char input;
-    cin >> input;
-    bool isInfinite = (input == 'y');
+#include "PacketQueueSimulator.hpp"
 
-    if (isInfinite) {
-        cout << "Simulating a M/M/1/K queue." << endl;
-    } else {
-        cout << "Simulating a M/M/1 queue." << endl;
-    }
 
-    long n = 0;
-    long lambda = 0;
-    double L = 0.0;
-    double C = 0.0;
+void showUsage()
+{
 
-    cout << "Enter a value for n: ";
-    cin >> n;
+}
 
-    cout << "Enter a value for λ: ";
-    cin >> lambda;
+/**
+ *
+ */
+int main(int argc, char *argv[])
+{
+	if (argc == 2)
+	{
+		// Run the exponential distribution test.
+	}
 
-    cout << "Enter a value for L: ";
-    cin >> L;
+	if (argc < 8)
+	{
+		showUsage();
+		return -1;
+	}
 
-    cout << "Enter a value for C: ";
-    cin >> C;
+	Seconds simulationTime = std::atof(argv[1]);
+	double averagePacketsPerSecond = std::atof(argv[2]);
+	Bits averagePacketLength = std::atoi(argv[3]);
+	int sampleRateFactor = std::atoi(argv[4]);
+	BitsPerSecond transmissionRate = std::atoi(argv[5]);
+	Packets maxBufferSize = std::atoi(argv[6]);
+	double rhoLower = std::atof(argv[7]);
+	double rhoUpper;
+	double rhoStep;
 
-    if (isInfinite) {
-        int K;
-        cout << "Enter a value for K: " << endl;
-        cin >> K;
+	if (argc >= 10)
+	{
+		rhoUpper = std::atof(argv[8]);
+		rhoStep = std::atof(argv[9]);
+	}
+	else if (argc == 8)
+	{
+		rhoUpper = rhoLower;
+		rhoStep = 0;
+	}
+	else
+	{
+		showUsage();
+		return -1;
+	}
 
-        cout << "Starting simulation..." << endl;
+	PacketQueueAbstraction packetQueue(maxBufferSize, transmissionRate);
+	PacketQueueSimulator simulator(packetQueue);
 
-        //SimulationK simulation = new SimulationK(lambda, L, C, K);
-        //simulation.startSimulation(n);
-        //simulation.computePerformance();
-    } else {
 
-        cout << "Starting simulation..." << endl;
 
-        Simulator simulator = Simulator(lambda, L, C);
-        simulator.startSimulation(n);
-    }
+	simulator.runSimulation();
+
 }
