@@ -1,6 +1,8 @@
+#include <cmath>
 #include <cstdlib>
 #include <fstream>
 #include <iostream>
+#include <random>
 #include <string>
 
 #include "PacketQueueAnalyzer.hpp"
@@ -13,7 +15,7 @@ void showUsage()
 	std::cout 
 		<< "ECE358-L1 Commands:\n\n"
 		<< "e - output exponential distribution performance to console\n"
-		<< "t <simulation time in seconds (double)>\n"
+		<< "d <simulation duration in seconds (double)>\n"
 		<< "l <average packet length in bits (long)>\n"
 		<< "f <sample rate factor (to be multiplied with lambda (average packets per second); double)>\n"
 		<< "c <transmission rate in bits per second (long)>\n"
@@ -32,6 +34,98 @@ void showUsage()
 		<< "All settings start at a default, invalid value of 0.\n"
 		<< "If rl > ru, they will automatically be flipped once the simulation is started.\n\n"
 		<< std::flush;
+}
+
+/**
+ * The cumulative distribution function for the exponential distribution.
+ */
+double exponentialDistributionFunction(double x)
+{
+	return 0;
+}
+
+/**
+ * Calculates the mean (expected value) of the elements of v for an exponential distribution.
+ * Based on https://en.wikipedia.org/wiki/Expected_value.
+ */
+double mean(std::vector<double> *v)
+{
+	double total = 0;
+	for (int i = 0; i < v->size(); ++i)
+	{
+		total += (*v)[i];
+	}
+	double mean = total / v->size();
+	return mean;
+}
+
+/**
+ * Calculate the variance of the elements of the v given their mean and the specified distribution function.
+ * Based on https://en.wikipedia.org/wiki/Variance.
+ */
+double variance(std::vector<double> *v, double mean)
+{
+	double total = 0;
+	for (int i = 0; i < v->size(); ++i)
+	{
+		double delta = (*v)[i] - mean;
+		double deltaSquared = delta * delta;
+		total += deltaSquared;
+	}
+	double variance = total / v->size();
+	return variance;
+}
+
+/**
+ * In C++, the rand() function _does not_ have any guaranteed distribution, thus, we must use
+ * https://en.cppreference.com/w/cpp/numeric/random/uniform_real_distribution, which is available
+ * in the same header as https://en.cppreference.com/w/cpp/numeric/random/exponential_distribution.
+ * We decided to use the latter in the final implementation, but the code below will show that
+ * both methods are equivalent.
+ */
+void runExponentialDistributionTest()
+{
+	// initialize random number generation; see https://en.cppreference.com/w/cpp/numeric/random/uniform_real_distribution
+	std::random_device rd;
+	std::mt19937_64 gen(rd());
+
+	const int N = 1000;
+	const double lambda = 75;
+
+	std::cout << "For sets of N = " << N << " values following an exponential distribution:" << std::endl;;
+
+	// expected mean and variance based on https://en.wikipedia.org/wiki/Exponential_distribution#Mean,_variance,_moments_and_median
+	double expectedMean = 1.0 / lambda;
+	std::cout << "expected mean of exponential distribution for lambda = " << lambda << ": " << expectedMean << std::endl;
+	double expectedVariance = 1.0 / (lambda * lambda);
+	std::cout << "expected variance of exponential distribution for lambda = " << lambda << ": " << expectedVariance << std::endl;
+
+	// implement an exponential distribution from a uniform distribution using the inverse method
+	std::vector<double> set1;
+	std::uniform_real_distribution<double> U(0, 1);
+	for (int i = 0; i < N; ++i)
+	{
+		double u = U(gen);
+		double x1 = -(1.0 / lambda) * std::log(1 - u);
+		set1.push_back(x1);
+	}
+	double mean1 = mean(&set1);
+	std::cout << "mean of exponential distribution using the inverse method: " << mean1 << std::endl;
+	double variance1 = variance(&set1, mean1);
+	std::cout << "variance of exponential distribution using the inverse method: " << variance1 << std::endl;
+
+	// utilize the built-in exponential distribution for comparison
+	std::vector<double> set2;
+	std::exponential_distribution<double> X2(lambda);
+	for (int i = 0; i < N; ++i)
+	{
+		double x2 = X2(gen);
+		set2.push_back(x2);
+	}
+	double mean2 = mean(&set2);
+	std::cout << "mean of built-in exponential distribution: " << mean2 << std::endl;
+	double variance2 = variance(&set2, mean2);
+	std::cout << "variance of built-in exponential distribution: " << variance2 << "\n\n" << std::flush;
 }
 
 /**
@@ -57,6 +151,7 @@ bool getLong(long *longVariable, bool requirePositive, const char *errorMessage)
 
 	return true;
 }
+
 /**
  * Read a double-precision floating point number from the console with error checking and message.
  * The specified doubleVariable is not updated unless the input string is successfully parsed.
@@ -99,7 +194,7 @@ bool validateSettings(
 	bool dataMissing = false;
 	if (simulationTime <= 0)
 	{
-		std::cout << "t <simulation time in seconds (double)> has not yet been successfully entered.\n\n";
+		std::cout << "d <simulation duration in seconds (double)> has not yet been successfully entered.\n\n";
 		dataMissing = true;
 	}
 	if (averagePacketLength <= 0)
@@ -202,7 +297,7 @@ void runAnalysis(
 
 		// write the current settings to the output as a CSV row with header
 		*output
-			<< "t,l,f,c,k,rs,rl,ru,rs\n"
+			<< "d,l,f,c,k,ri,rl,ru,rs\n"
 			<< simulationTime << ","
 			<< averagePacketLength << ","
 			<< sampleRateFactor << ","
@@ -219,7 +314,6 @@ void runAnalysis(
 		if (rhoSingle > 0)
 		{
 			analyzer->gatherDataFor(
-				simulationTime,
 				averagePacketLength,
 				sampleRateFactor,
 				rhoSingle,
@@ -229,7 +323,6 @@ void runAnalysis(
 		else
 		{
 			analyzer->gatherDataFor(
-				simulationTime,
 				averagePacketLength,
 				sampleRateFactor,
 				rhoLower,
@@ -245,6 +338,8 @@ void runAnalysis(
 			fileOutput->close();
 			delete fileOutput;
 		}
+
+		std::cout << "Simulation execution complete.\n\n" << std::flush;
 	}
 }
 
@@ -256,7 +351,7 @@ int main(int argc, char *argv[])
 {
 	showUsage();
 
-	// the packet queue state
+	// the packet queue state; the simulation duration, transmission rate and max buffer size may be updated throughout the session
 	PacketQueueAbstraction packetQueue;
 
 	// runs events against the packet queue state
@@ -266,11 +361,8 @@ int main(int argc, char *argv[])
 	PacketQueueAnalyzer analyzer(&simulator);
 
 	// simulation settings; these may be updated throughout the session
-	Seconds simulationTime = 0;
 	Bits averagePacketLength = 0;
 	Factor sampleRateFactor = 0;
-	BitsPerSecond transmissionRate = 0;
-	Packets maxBufferSize = 0;
 	TrafficIntensity rhoSingle = 0;
 	TrafficIntensity rhoLower = 0;
 	TrafficIntensity rhoUpper = 0;
@@ -287,28 +379,29 @@ int main(int argc, char *argv[])
 		switch (input)
 		{
 		case 'e': // output exponential distribution performance to console
+			runExponentialDistributionTest();
 			break;
-		case 't': // set the simulation time
-			getDouble(&simulationTime, true, "Invalid simulation time; please enter a valid positive nonzero decimal value (double) in seconds.\n\n");
+		case 'd': // set the simulation duration
+			getDouble(&simulator.simulationDuration, true, "Invalid simulation duration (d); please enter a valid positive nonzero decimal value (double) in seconds.\n\n");
 			break;
 		case 'l': // set the average packet length
-			getLong(&averagePacketLength, true, "Invalid average packet length; please enter a valid positive nonzero integer (long) in bits.\n\n");
+			getLong(&averagePacketLength, true, "Invalid average packet length (l); please enter a valid positive nonzero integer (long) in bits.\n\n");
 			break;
 		case 'f': // set the sample rate factor
-			getDouble(&sampleRateFactor, true, "Invalid sample rate factor; please enter a valid positive nonzero decimal value (double) to be multiplied with lambda.\n\n");
+			getDouble(&sampleRateFactor, true, "Invalid sample rate factor (f); please enter a valid positive nonzero decimal value (double) to be multiplied with lambda.\n\n");
 			break;
 		case 'c': // set the packet queue server's transmission rate
-			getLong(&transmissionRate, true, "Invalid transmission rate; please enter a valid positive nonzero integer (long) in bits per second.\n\n");
+			getLong(&packetQueue.transmissionRate, true, "Invalid transmission rate (c); please enter a valid positive nonzero integer (long) in bits per second.\n\n");
 			break;
 		case 'k': // set the max buffer size
-			getLong(&maxBufferSize, false, "Invalid max buffer size; please enter a valid nonzero integer (long) in packets.\n\n");
+			getLong(&packetQueue.maxBufferSize, false, "Invalid max buffer size (k); please enter a valid nonzero integer (long) in packets.\n\n");
 			break;
 		case 'r': // set rho
 			std::cin >> input;
 			switch (input)
 			{
 			case 'i': // use a single value of rho
-				succeeded = getDouble(&rhoSingle, true, "Invalid single value for rho; please enter a valid positive nonzero decimal value (double) as l * lambda / c.\n\n");
+				succeeded = getDouble(&rhoSingle, true, "Invalid single value for rho (ri); please enter a valid positive nonzero decimal value (double) as l * lambda / c.\n\n");
 				if(succeeded)
 				{
 					// this option is mutually exclusive of the others
@@ -318,7 +411,7 @@ int main(int argc, char *argv[])
 				}
 				break;
 			case 'l': // set the lower bound for rho
-				succeeded = getDouble(&rhoLower, true, "Invalid lower value for rho; please enter a valid positive nonzero decimal value (double) as l * lambda / c.\n\n");
+				succeeded = getDouble(&rhoLower, true, "Invalid lower value for rho (rl); please enter a valid positive nonzero decimal value (double) as l * lambda / c.\n\n");
 				if (succeeded)
 				{
 					// this option is mutually exclusive of the first
@@ -326,7 +419,7 @@ int main(int argc, char *argv[])
 				}
 				break;
 			case 'u': // set the upper bound for rho
-				succeeded = getDouble(&rhoUpper, true, "Invalid upper value for rho; please enter a valid positive nonzero decimal value (double) as l * lambda / c.\n\n");
+				succeeded = getDouble(&rhoUpper, true, "Invalid upper value for rho (ru); please enter a valid positive nonzero decimal value (double) as l * lambda / c.\n\n");
 				if (succeeded)
 				{
 					// this option is mutually exclusive of the first
@@ -334,7 +427,7 @@ int main(int argc, char *argv[])
 				}
 				break;
 			case 's': // set the step size for rho
-				succeeded = getDouble(&rhoStep, true, "Invalid value for rho step size; please enter a valid positive nonzero decimal value (double) as l * lambda / c.\n\n");
+				succeeded = getDouble(&rhoStep, true, "Invalid value for rho step size (rs); please enter a valid positive nonzero decimal value (double) as l * lambda / c.\n\n");
 				if (succeeded)
 				{
 					// this option is mutually exclusive of the first
@@ -348,11 +441,11 @@ int main(int argc, char *argv[])
 		case 's': // show the settings
 			std::cout
 				<< "Settings:\n\n"
-				<< "t <simulation time in seconds (double)>: " << simulationTime << "\n"
+				<< "d <simulation duration in seconds (double)>: " << simulator.simulationDuration << "\n"
 				<< "l <average packet length in bits (long)>: " << averagePacketLength << "\n"
 				<< "f <sample rate factor (multiple of lambda (average packets per second); long)>: " << sampleRateFactor << "\n"
-				<< "c <transmission rate in bits per second (long)>: " << transmissionRate << "\n"
-				<< "k <max buffer size in packets (negative for infinity; long)>: " << maxBufferSize << "\n"
+				<< "c <transmission rate in bits per second (long)>: " << packetQueue.transmissionRate << "\n"
+				<< "k <max buffer size in packets (negative for infinity; long)>: " << packetQueue.maxBufferSize << "\n"
 				<< "ri <use a single value of rho (l * lambda / c; double)>: " << rhoSingle << "\n"
 				<< "rl <rho lower (l * lambda / c; double)>: " << rhoLower << "\n"
 				<< "ru <rho upper (l * lambda / c; double)>: " << rhoUpper << "\n"
@@ -366,11 +459,11 @@ int main(int argc, char *argv[])
 			case 'c': // output the CSV results to the console
 				runAnalysis(
 					&analyzer,
-					simulationTime,
+					simulator.simulationDuration,
 					averagePacketLength,
 					sampleRateFactor,
-					transmissionRate,
-					maxBufferSize,
+					packetQueue.transmissionRate,
+					packetQueue.maxBufferSize,
 					rhoSingle,
 					rhoLower,
 					rhoUpper,
@@ -381,11 +474,11 @@ int main(int argc, char *argv[])
 			case 'f': // output the CSV results to a file
 				runAnalysis(
 					&analyzer,
-					simulationTime,
+					simulator.simulationDuration,
 					averagePacketLength,
 					sampleRateFactor,
-					transmissionRate,
-					maxBufferSize,
+					packetQueue.transmissionRate,
+					packetQueue.maxBufferSize,
 					rhoSingle,
 					rhoLower,
 					rhoUpper,

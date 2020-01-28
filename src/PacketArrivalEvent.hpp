@@ -8,6 +8,13 @@
  */
 class PacketArrivalEvent : public PacketQueueEvent
 {
+private:
+	/**
+	 * Attempts to generate a corresponding packet departure event for
+	 * this packet arrival event.
+	 */
+	void generateDepartureEvent(PacketQueueSimulator *simulator);
+
 public:
 
 	/**
@@ -15,10 +22,13 @@ public:
 	 */
 	Bits length;
 
-	PacketArrivalEvent(
+	PacketArrivalEvent::PacketArrivalEvent(
 		Seconds time,
-		Bits length
-	);
+		Bits length) :
+		PacketQueueEvent(time),
+		length(length)
+	{
+	}
 
 	/**
 	 * Manages the logic for attempting to add a packet to the queue.

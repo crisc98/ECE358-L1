@@ -1,0 +1,4 @@
+d,l,f,c,k,rs,rl,ru,rs
+1000,2000,5,1000000,-1,0.25,0,0,0
+rho,numArrivals,numDepartures,numDropped,numIdles,numObservations,E[N],P_IDLE,P_LOSS
+0.25,124898,124898,0,468660,624971,0.333433,0.749891,0

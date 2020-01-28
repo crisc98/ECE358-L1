@@ -1,11 +1,33 @@
 #include "PacketQueueSimulator.hpp"
 
 /**
- * Registers the specified event to be processed at a particular time.
+ * Returns true if the specified time is between 0 seconds and the current simulation duration.
  */
-void PacketQueueSimulator::addEvent(PacketQueueEvent *event)
+bool PacketQueueSimulator::isWithinSimulationDuration(Seconds time)
 {
-	eventQueue.push(event);
+	bool result = (time >= 0) && (time <= simulationDuration);
+	return result;
+}
+
+/**
+ * Adds an event to be processed at a particular time with respect to other events.
+ *
+ * Returns true if the specified event's time is within the simulation time;
+ * if this is the case, This class takes _sole responsibility_ over the destruction of
+ * the pointer passed in.
+ *
+ * If false is returned, it is up to the event's creator to delete it, whereby this
+ * class _does not_ take responsibility for the destruction of the pointer passed in.
+ */
+bool PacketQueueSimulator::addEvent(PacketQueueEvent *event)
+{
+	if (isWithinSimulationDuration(event->time))
+	{
+		eventQueue.push(event);
+		return true;
+	}
+	
+	return false;
 }
 
 /**

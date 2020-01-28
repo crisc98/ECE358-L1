@@ -1,8 +1,10 @@
 #pragma once
 
 typedef double Seconds;
+typedef double CumulativePackets;
 typedef long Bits;
 typedef long BitsPerSecond;
+typedef long Observations;
 typedef long Packets;
 
 /**
@@ -15,46 +17,46 @@ public:
 	/**
 	 * The packet queue's size, K, as measured in packets.
 	 */
-	Packets maxBufferSize;
+	Packets maxBufferSize = 0;
 
 	/**
 	 * The current number of packets stored in the queue.
 	 */
-	Packets currentBufferSize;
+	Packets currentBufferSize = 0;
 
 	/**
 	 * The cumulative number of packets in the queue across all observations.
 	 */
-	Packets cumulativeBufferSize;
+	CumulativePackets cumulativeBufferSize = 0;
 
 	/**
 	 * The rate in bits per second at which a packet can be serviced and transmitted.
 	 * Used to determine the delay between a packets arrival, the previous packet's
 	 * departure, and when the current packet will have finished being serviced.
 	 */
-	BitsPerSecond transmissionRate;
+	BitsPerSecond transmissionRate = 0;
 
-	Packets numArrivals;
-	Packets numDepartures;
-	Packets numDropped;
-	long numIdles;
-	long numObservations;
+	Packets numArrivals = 0;
+	Packets numDepartures = 0;
+	Packets numDropped = 0;
+	Observations numIdles = 0;
+	Observations numObservations = 0;
 
 	/**
 	 * True if the packet queue is currently empty and is not
 	 * imminently serving a packet.
 	 */
-	bool isIdle;
+	bool isIdle = true;
 
 	/**
 	 * True if the packet queue is full and can accept no more packets.
 	 */
-	bool isFull;
+	bool isFull = false;
 
 	/**
 	 * The time at which the last packet completed being transmitted.
 	 */
-	Seconds lastDeparture;
+	Seconds lastDeparture = 0;
 
 	/**
 	 * Calculate E[N], the average number of packets in the queue across all observations.

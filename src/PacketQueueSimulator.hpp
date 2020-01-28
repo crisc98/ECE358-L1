@@ -39,6 +39,14 @@ private:
 
 public:
 
+	/**
+	 * The number of seconds for which the simulator will run.
+	 * This controls whether an event being registered to be processed at a particular
+	 * time will be accepted.
+	 * This may be used to decide if an event should be created at all.
+	 */
+	Seconds simulationDuration;
+
 	PacketQueueAbstraction *packetQueue;
 
 	/**
@@ -48,15 +56,31 @@ public:
 	 * All events registered via addEvent() are assumed to "act upon" the state of
 	 * this abstraction in some way.
 	 */
-	PacketQueueSimulator(PacketQueueAbstraction *packetQueue) : packetQueue(packetQueue)
+	PacketQueueSimulator(PacketQueueAbstraction *packetQueue) : simulationDuration(0), packetQueue(packetQueue)
 	{
 	}
 
 	/**
-	 * Adds an event to be processed at a particular time with respect to other events.
-	 * This class takes _sole responsibility_ over the destruction of the pointer passed in.
+	 * Returns true if the specified time is between 0 seconds and the current simulation duration.
 	 */
-	void addEvent(PacketQueueEvent *event);
+	bool isWithinSimulationDuration(Seconds time);
+
+	/**
+	 * Adds an event to be processed at a particular time with respect to other events,
+	 * _only_ if it is within the simulation's duration; this ensures that no events
+	 * occurring _outside_ of the simulation's duration will contribute to the packet queue's
+	 * measured performance statistics.
+	 * 
+	 * Returns true if the specified event's time is within the simulation time;
+	 * if this is the case, This class takes _sole responsibility_ over the destruction of
+	 * the pointer passed in.
+	 * 
+	 * If false is returned, it is up to the event's creator to delete it, whereby this
+	 * class _does not_ take responsibility for the destruction of the pointer passed in.
+	 * 
+	 * See isWithinSimulationDuration().
+	 */
+	bool addEvent(PacketQueueEvent *event);
 
 	/**
 	 * Runs the simulation until all registered events have been processed and deleted.

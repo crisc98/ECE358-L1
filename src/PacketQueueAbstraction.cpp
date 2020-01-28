@@ -41,7 +41,10 @@ void PacketQueueAbstraction::reset()
 	currentBufferSize = 0;
 	numArrivals = 0;
 	numDepartures = 0;
+	numDropped = 0;
+	numIdles = 0;
 	numObservations = 0;
 	isIdle = true;
-	isFull = maxBufferSize != 0;
+	isFull = false;
+	lastDeparture = 0;
 }

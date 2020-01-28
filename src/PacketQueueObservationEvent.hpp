@@ -10,6 +10,10 @@ class PacketQueueObservationEvent : public PacketQueueEvent
 {
 public:
 
+	PacketQueueObservationEvent(Seconds time) : PacketQueueEvent(time)
+	{
+	}
+
 	/**
 	 * Logs information about the packet queue's current state.
 	 */

@@ -1,29 +1,20 @@
 #include "PacketArrivalEvent.hpp"
 #include "PacketDepartureEvent.hpp"
 
-PacketArrivalEvent::PacketArrivalEvent(
-	Seconds time,
-	Bits length) :
-	PacketQueueEvent(time),
-	length(length)
-{
-}
-
 /**
- * Manages the logic for attempting to add a packet to the queue.
+ * Attempts to generate a corresponding packet departure event for
+ * this packet arrival event.
  */
-void PacketArrivalEvent::process(PacketQueueSimulator *simulator)
+void PacketArrivalEvent::generateDepartureEvent(PacketQueueSimulator *simulator)
 {
-	++simulator->packetQueue->numArrivals;
-
-	if (simulator->packetQueue->isFull)
-	{
-		++simulator->packetQueue->numDropped;
-	}
-	else
+	/**
+	 * Only attempt to add a corresponding departure event if the last departure time was within
+	 * the simulation's duration.
+	 */
+	if (simulator->isWithinSimulationDuration(simulator->packetQueue->lastDeparture))
 	{
 		Seconds departureTime;
-		Seconds transmissionTime = ((double) length) / simulator->packetQueue->transmissionRate;
+		Seconds transmissionTime = ((double)length) / simulator->packetQueue->transmissionRate;
 
 		if (simulator->packetQueue->isIdle)
 		{
@@ -47,9 +38,41 @@ void PacketArrivalEvent::process(PacketQueueSimulator *simulator)
 		/**
 		 * Store the calculated departure time that all subsequent packets may cumulatively
 		 * add their departure time on top of.
+		 * If the packets arrive in one order, they will also depart in that order.
+		 * If this packet's departure time is outside of the simulation time, the departure
+		 * event will not be added and all subsequent packet arrival events will not
+		 * attempt to add a departure event.
 		 */
 		simulator->packetQueue->lastDeparture = departureTime;
 
+		/**
+		 * Only add the departure event if it will occur within the simulation's duration.
+		 */
+		if (simulator->isWithinSimulationDuration(departureTime))
+		{
+			PacketDepartureEvent *departure = new PacketDepartureEvent(departureTime);
+			simulator->addEvent(departure);
+		}
+	}
+}
+
+/**
+ * Manages the logic for attempting to add a packet to the queue.
+ */
+void PacketArrivalEvent::process(PacketQueueSimulator *simulator)
+{
+	++simulator->packetQueue->numArrivals;
+
+	/**
+	 * Drop the packet if the queue is full, else, add it and try to register a
+	 * corresponding departure event for it.
+	 */
+	if (simulator->packetQueue->isFull)
+	{
+		++simulator->packetQueue->numDropped;
+	}
+	else
+	{
 		++simulator->packetQueue->currentBufferSize;
 
 		/**
@@ -57,13 +80,12 @@ void PacketArrivalEvent::process(PacketQueueSimulator *simulator)
 		 */
 		if (
 			(simulator->packetQueue->maxBufferSize >= 0) &&
-			(simulator->packetQueue->currentBufferSize < simulator->packetQueue->maxBufferSize)
+			(simulator->packetQueue->currentBufferSize >= simulator->packetQueue->maxBufferSize)
 			)
 		{
 			simulator->packetQueue->isFull = true;
 		}
 
-		PacketDepartureEvent *departure = new PacketDepartureEvent(departureTime);
-		simulator->addEvent(departure);
+		generateDepartureEvent(simulator);
 	}
 }
