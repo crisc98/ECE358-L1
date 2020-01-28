@@ -1,9 +1,11 @@
 #pragma once
 
+#include <iostream>
+
 #include "PacketQueueSimulator.hpp"
 
-typedef double TrafficeIntensity;
-typedef long Factor;
+typedef double TrafficIntensity;
+typedef double Factor;
 
 /**
  * Generates statistics about a particular packet queue configuration
@@ -30,28 +32,38 @@ public:
 	}
 
 	/**
+	 * Adds the CSV headers to the start of the output.
+	 */
+	void writeHeaders(std::ostream *output);
+
+	/**
 	 * Runs a simulation of the packet queue for the specified packet generation
 	 * parameters and a single value of rho
-	 * (averagePacketLength * averagePacketsPerSecond / transmissionRate).
+	 * (averagePacketLength * averagePacketsPerSecond / transmissionRate),
+	 * adding a single CSV row of packet queue performance statistics to the output.
 	 */
 	void gatherDataFor(
 		Seconds simulationTime,
 		Bits averagePacketLength,
 		Factor sampleRateFactor,
-		TrafficeIntensity rho
+		TrafficIntensity rho,
+		std::ostream *output
 	);
 
 	/**
 	 * Runs a simulation of the packet queue for the specified packet generation
 	 * parameters over a range of values for rho
-	 * (averagePacketLength * averagePacketsPerSecond / transmissionRate).
+	 * (averagePacketLength * averagePacketsPerSecond / transmissionRate),
+	 * adding CSV rows of packet queue performance statistics to the output, each
+	 * corresponding with a value of rho.
 	 */
 	void gatherDataFor(
 		Seconds simulationTime,
 		Bits averagePacketLength,
 		Factor sampleRateFactor,
-		TrafficeIntensity rhoLower,
-		TrafficeIntensity rhoUpper,
-		TrafficeIntensity rhoStep
+		TrafficIntensity rhoLower,
+		TrafficIntensity rhoUpper,
+		TrafficIntensity rhoStep,
+		std::ostream *output
 	);
 };

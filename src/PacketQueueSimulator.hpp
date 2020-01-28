@@ -59,12 +59,13 @@ public:
 	void addEvent(PacketQueueEvent *event);
 
 	/**
-	 * Runs the simulation until all registered events have been processed.
+	 * Runs the simulation until all registered events have been processed and deleted.
 	 */
 	void runSimulation();
 
 	/**
 	 * Removes and deletes all registered events without processing them.
+	 * This does not need to be called if runSimulation() has already been called.
 	 */
 	void flush();
 
