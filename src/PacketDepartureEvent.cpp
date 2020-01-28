@@ -5,11 +5,11 @@
  */
 void PacketDepartureEvent::process(PacketQueueSimulator *simulator)
 {
-	if (simulator->packetQueue.isIdle) return;
+	if (simulator->packetQueue->isIdle) return;
 
-	++simulator->packetQueue.numDepartures;
+	++simulator->packetQueue->numDepartures;
 
-	--simulator->packetQueue.currentBufferSize;
+	--simulator->packetQueue->currentBufferSize;
 
 	/**
 	 * The packet queue is idle once there are no more packets left in the
@@ -17,10 +17,10 @@ void PacketDepartureEvent::process(PacketQueueSimulator *simulator)
 	 * packet has finished being transmitted, the next packet will immediately
 	 * start being serviced, though its departure event has yet to be triggered.
 	 */
-	if (simulator->packetQueue.currentBufferSize == 0)
+	if (simulator->packetQueue->currentBufferSize == 0)
 	{
-		simulator->packetQueue.isIdle = true;
+		simulator->packetQueue->isIdle = true;
 	}
 
-	simulator->packetQueue.isFull = false;
+	simulator->packetQueue->isFull = false;
 }

@@ -1,31 +1,6 @@
 #include "PacketQueueAbstraction.hpp"
 
 /**
- * Resets all of the measured statistics so that a new set of measurements may
- * be taken for a new set of packet queue events.
- */
-void PacketQueueAbstraction::reset()
-{
-	cumulativeBufferSize = 0;
-	currentBufferSize = 0;
-	numArrivals = 0;
-	numDepartures = 0;
-	numObservations = 0;
-	isIdle = true;
-	isFull = maxBufferSize != 0;
-}
-
-PacketQueueAbstraction::PacketQueueAbstraction(
-	Packets maxBufferSize,
-	BitsPerSecond transmissionRate
-) :
-	maxBufferSize(maxBufferSize),
-	transmissionRate(transmissionRate)
-{
-	reset();
-}
-
-/**
  * Calculate E[N], the average number of packets in the queue across all observations.
  */
 double PacketQueueAbstraction::getAverageBufferSize()
@@ -50,4 +25,23 @@ double PacketQueueAbstraction::getQueueIdleRatio() {
 double PacketQueueAbstraction::getPacketLossRatio() {
 	double packetLossRatio = ((double)numDropped) / ((double)numArrivals);
 	return packetLossRatio;
+}
+
+/**
+ * Resets all of the measured statistics so that a new set of measurements may
+ * be taken for a new set of packet queue events, leaving maxBufferSize and
+ * transmissionRate unchanged; those may be edited manually.
+ *
+ * The maxBufferSize and transmissionRate MUST be set and this method called
+ * before running a new simulation of the packet queue.
+ */
+void PacketQueueAbstraction::reset()
+{
+	cumulativeBufferSize = 0;
+	currentBufferSize = 0;
+	numArrivals = 0;
+	numDepartures = 0;
+	numObservations = 0;
+	isIdle = true;
+	isFull = maxBufferSize != 0;
 }

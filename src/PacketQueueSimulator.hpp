@@ -39,14 +39,22 @@ private:
 
 public:
 
-	PacketQueueAbstraction packetQueue;
+	PacketQueueAbstraction *packetQueue;
 
-	PacketQueueSimulator(PacketQueueAbstraction packetQueue) : packetQueue(packetQueue)
+	/**
+	 * Creates a packet queue simulator using the specified packet queue abstraction.
+	 * The specified abstraction will define how the simulator packet queue's state
+	 * is managed and can be modified externally to change the simulation parameters.
+	 * All events registered via addEvent() are assumed to "act upon" the state of
+	 * this abstraction in some way.
+	 */
+	PacketQueueSimulator(PacketQueueAbstraction *packetQueue) : packetQueue(packetQueue)
 	{
 	}
 
 	/**
 	 * Adds an event to be processed at a particular time with respect to other events.
+	 * This class takes _sole responsibility_ over the destruction of the pointer passed in.
 	 */
 	void addEvent(PacketQueueEvent *event);
 
@@ -59,4 +67,12 @@ public:
 	 * Removes and deletes all registered events without processing them.
 	 */
 	void flush();
+
+	/**
+	 * Ensures that all registered event objects have been destroyed once this class is destroyed.
+	 */
+	~PacketQueueSimulator()
+	{
+		flush();
+	}
 };

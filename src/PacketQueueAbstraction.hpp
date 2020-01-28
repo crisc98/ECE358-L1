@@ -1,23 +1,15 @@
 #pragma once
 
-typedef int Bits;
 typedef double Seconds;
-typedef int BitsPerSecond;
-typedef int Packets;
+typedef long Bits;
+typedef long BitsPerSecond;
+typedef long Packets;
 
 /**
  * An abstraction of a packet queue's state and statistics regarding its performance.
  */
 class PacketQueueAbstraction
 {
-private:
-
-	/**
-	 * Resets all of the measured statistics so that a new set of measurements may
-	 * be taken for a new set of packet queue events.
-	 */
-	void reset();
-
 public:
 
 	/**
@@ -45,8 +37,8 @@ public:
 	Packets numArrivals;
 	Packets numDepartures;
 	Packets numDropped;
-	int numIdles;
-	int numObservations;
+	long numIdles;
+	long numObservations;
 
 	/**
 	 * True if the packet queue is currently empty and is not
@@ -64,11 +56,6 @@ public:
 	 */
 	Seconds lastDeparture;
 
-	PacketQueueAbstraction(
-		Packets maxBufferSize,
-		BitsPerSecond transmissionRate
-	);
-
 	/**
 	 * Calculate E[N], the average number of packets in the queue across all observations.
 	 */
@@ -85,4 +72,14 @@ public:
 	 * number of packets generated.
 	 */
 	double getPacketLossRatio();
+
+	/**
+	 * Resets all of the measured statistics so that a new set of measurements may
+	 * be taken for a new set of packet queue events, leaving maxBufferSize and
+	 * transmissionRate unchanged; those may be edited manually.
+	 *
+	 * The maxBufferSize and transmissionRate MUST be set and this method called
+	 * before running a new simulation of the packet queue.
+	 */
+	void reset();
 };
