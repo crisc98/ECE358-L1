@@ -22,7 +22,7 @@ public:
 	 */
 	Bits length;
 
-	PacketArrivalEvent::PacketArrivalEvent(
+	PacketArrivalEvent(
 		Seconds time,
 		Bits length) :
 		PacketQueueEvent(time),

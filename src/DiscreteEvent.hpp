@@ -18,7 +18,7 @@ public:
 	/**
 	 * Creates a discrete event to be processed at the specified time.
 	 */
-	TypedDiscreteEvent(TTime time) : time(time)
+	DiscreteEvent(TTime time) : time(time)
 	{
 	}
 
@@ -36,7 +36,7 @@ public:
 	{
 	public:
 
-		bool operator()(TypedDiscreteEvent* lhs, TypedDiscreteEvent* rhs)
+		bool operator()(DiscreteEvent* lhs, DiscreteEvent* rhs)
 		{
 			bool result = lhs->time > rhs->time;
 			return result;
