@@ -6,8 +6,6 @@
 template <class TTime, class TState>
 class DiscreteEvent
 {
-	typedef DiscreteEvent<TTime, TState> TypedDiscreteEvent;
-
 public:
 
 	/**
